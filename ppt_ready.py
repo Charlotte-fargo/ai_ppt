@@ -476,7 +476,7 @@ def generate_content_slides(prs, data, content_slide_layout, images_dir, dark_bl
 def generate_image_slides(prs, content,image_slide_layout, images_dir, dark_blue):
     img_slide = prs.slides.add_slide(image_slide_layout)
     img_slide.placeholders[0].text = content
-    matched_image_path = find_matching_image(content, images_dir, match_length=3)
+    matched_image_path = find_matching_image(content, images_dir, match_length=2)
     if matched_image_path:
         # 尝试在幻灯片中插入图片
         if fill_image(img_slide, matched_image_path):
