@@ -5,7 +5,7 @@ import time
 import uuid
 import os
 import glob  # 新增库：用于查找文件
-
+import base64
 # ================= 配置区域 =================
 
 # 文件夹路径 (可以是绝对路径，也可以是相对路径)
@@ -106,9 +106,10 @@ def get_access_token_b(CLIENT_ID, CLIENT_SECRET):
         print(f" 认证失败: {e}")
         return None
 
-def run_ai_job(token, context_text,API_BASE_URL):
+def run_ai_job(token, context_text, API_BASE_URL):
+    # 1. 基础检查
     if not context_text:
-        print(" 没有提取到任何文本内容，取消 AI 任务。")
+        print("⚠️ 没有提取到任何文本内容，取消 AI 任务。")
         return None
 
     url = f"{API_BASE_URL}/job"
@@ -117,21 +118,23 @@ def run_ai_job(token, context_text,API_BASE_URL):
         'Authorization': f'Bearer {token}'
     }
     
-    # Prompt 设计
+    # 2. Prompt 设计 (指令)
     system_prompt = """
     你是一个专业的中文首席投资官助理。你需要阅读提供的金融市场分析文档，并生成一份标准化的投资观点报告。
     
     任务要求：
-    1. 生成7种资产的投资观点（中港股市、美股、欧股、日股、债市、黄金、原油）。如果提供的文档中缺少某种资产，请根据你的知识库合理推断或标记为"暂无数据",中港股市和黄金的投资逻辑中文字数必须在80字，其中美股，欧股投资逻辑的字数控制在55字以内，其中关于原油，日股和债市的投资逻辑的字数控制在50字以内，以下生成的每一个bullet point字数控制在80字左右，三个bullet point总字数要在300。
-    2. 严格遵循以下输出格式。
+    1. 生成7种资产的投资观点（中港股市、美股、欧股、日股、债市、黄金、原油）。如果提供的文档中缺少某种资产，请根据你的知识库合理推断或标记为"暂无数据"。
+    2. 中港股市和黄金的投资逻辑中文字数必须在80字左右。
+    3. 美股，欧股投资逻辑的字数控制在55字以内。
+    4. 原油，日股和债市的投资逻辑的字数控制在50字以内。
+    5. 以下生成的每一个bullet point字数控制在50字左右，三个bullet point总字数需要在150字左右。
     
     硬性写作要求：
     - 标题格式为“资产类别名称：xxxxx”
     - 观点内容不超过三句 bullet point。
     - 每一句观点的格式为“小标题：xxxx”。
-    - 每一个bullet point字数控制在80字左右。
     - 语言专业、简练。
-    - 标题需要住核心结论，点明关键驱动因素，标题字数需要在13字以内。
+    - 标题需要抓住核心结论，点明关键驱动因素。
 
     最后，请仅输出一个纯净的 JSON 格式，不要包含Markdown标记（如 ```json）。JSON结构如下：
     {
@@ -144,16 +147,22 @@ def run_ai_job(token, context_text,API_BASE_URL):
           { "title": "...", "bullets": ["...", "..."] } 
       ]
     }
-    每生成一个bullet point和标题，请务必严格遵守字数要求。
-  
     """
 
-    final_prompt = f"{system_prompt}\n\n{context_text}"
+    # 3. 将 指令 + 内容 合并，并进行 Base64 编码
+    #    这样做的好处是避免指令过长导致 parameter 字段放不下
+    final_content = f"{system_prompt}\n\n========== 以下是分析文档内容 ==========\n{context_text}"
+    
+    try:
+        encoded_text = base64.b64encode(final_content.encode('utf-8')).decode('utf-8')
+    except Exception as e:
+        print(f" 编码错误: {e}")
+        return None
 
+    # 4. 构建 Payload
     payload = {
-        "type": "callLlm",
+        "type": "callLlm", 
         "metadata": {
-            "clientRequestId": str(uuid.uuid4()),
             "tenantId": "GOLDHORSE",
             "clientId": "CIO",
             "userId": "script_runner",
@@ -162,44 +171,115 @@ def run_ai_job(token, context_text,API_BASE_URL):
         },
         "input": {
             "parameter": {
-                "prompt": final_prompt,
-                "model_name": "gemini-3-pro-preview" 
+                "model_name": "gemini-3-pro-preview",
+                # 指引 AI 去读文件
+                "prompt": "请详细阅读附带的文件资源（resource），文件中包含了身份设定、具体指令以及需要分析的金融文档内容。请严格按照文件中的 JSON 格式要求输出结果。"
             },
-            "resource": []
+            "resource": [
+                {
+                    # 给虚拟文件起个名字
+                    "name": "instruction_and_context.txt",
+                    "resource": {
+                        "dataStatus": "NEW",
+                        "mimeType": "text/plain",
+                        "encoding": "BASE64",
+                        "data": encoded_text
+                    }
+                }
+            ]
         },
         "callback": []
     }
 
-    print(" 正在提交 AI 任务...")
+    # 5. 打印调试信息并发送 (修正了这里的变量名)
+    print(f"\n🚀 [DEBUG] 正在提交任务，文本长度: {len(context_text)} 字符")
+    
     try:
         resp = requests.post(url, headers=headers, json=payload)
-        resp.raise_for_status()
-        job_id = resp.json().get("id")
-        print(f" 任务 ID: {job_id}")
+        
+        # 打印一下返回值，万一报错能看到原因
+        if resp.status_code != 200:
+            print(f"❌ 提交失败 (状态码 {resp.status_code}): {resp.text}")
+            return None
+
+        response_data = resp.json()
+        
+        # 优先拿 uuid，没有才拿 id
+        # job_id = response_data.get("uuid") or response_data.get("id")
+        job_id = response_data.get("id")
+        
+        # 如果万一没有 id，再拿 uuid 做备选（虽然这种情况很少见）
+        if not job_id:
+            job_id = response_data.get("uuid")
+
+        print(f"✅ 任务提交成功! 任务 ID: {job_id}")
         return job_id
+        
+
     except Exception as e:
-        print(f"提交失败: {e}")
-        if 'resp' in locals():
-            print(resp.text)
+        print(f"❌ 请求异常: {e}")
         return None
 
-def poll_result(token, job_id,API_BASE_URL):
-    url = f"{API_BASE_URL}/job/JOB_ID/{job_id}"
-    headers = {'Authorization': f'Bearer {token}'}
+
+# def poll_result(token, job_id,API_BASE_URL):
+#     url = f"{API_BASE_URL}/job/JOB_ID/{job_id}"
+#     headers = {'Authorization': f'Bearer {token}'}
     
-    print(" AI 正在生成报告 (可能需要 30-60 秒)...")
-    for _ in range(30):
-        resp = requests.get(url, headers=headers)
-        if resp.status_code == 200:
-            data = resp.json()
-            status = data.get("status")
-            if status in ["SUCCESS", "COMPLETED"]:
-                return data
-            if status == "FAILED":
-                print(" 任务处理失败")
-                return None
-        print(".", end="", flush=True)
-        time.sleep(3)
+#     print(" AI 正在生成报告 (可能需要 30-60 秒)...")
+#     for _ in range(30):
+#         resp = requests.get(url, headers=headers)
+#         if resp.status_code == 200:
+#             data = resp.json()
+#             status = data.get("status")
+#             if status in ["SUCCESS", "COMPLETED"]:
+#                 return data
+#             if status == "FAILED":
+#                 print(" 任务处理失败")
+#                 return None
+#         print(".", end="", flush=True)
+#         time.sleep(3)
+#     return None
+def poll_result(token, job_id, API_BASE_URL):
+    # ✅ 确保 URL 拼接正确 (参考之前的文档，必须包含 /JOB_ID/)
+    url = f"{API_BASE_URL}/job/JOB_ID/{job_id}"
+    
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+
+    print(f"🔍 开始轮询任务结果: {url}")
+
+    # 循环 60 次，每次等待 3 秒，最长等待 3 分钟
+    for i in range(60):
+        try:
+            resp = requests.get(url, headers=headers)
+            
+            if resp.status_code == 200:
+                data = resp.json()
+                status = data.get("status")
+                
+                # 打印当前状态，方便观察进度
+                print(f"   [第 {i+1} 次查询] 状态: {status}")
+
+                if status in ["SUCCESS", "COMPLETED"]:
+                    print("✅ AI 任务成功！")
+                    return data
+                
+                if status == "FAILED" or status == "ERROR":
+                    print("\n❌ 任务处理失败！服务端返回信息如下：")
+                    # 👇 这一行最关键！把它打印出来发给我
+                    print(data) 
+                    break
+            else:
+                print(f"   ⚠️ 查询接口报错: {resp.status_code} - {resp.text}")
+                
+        except Exception as e:
+            print(f"   ⚠️ 请求异常: {e}")
+
+        time.sleep(3) # 等待 3 秒再查
+
+    print("\n⏰ 等待超时，AI 还没跑完。")
     return None
 def extract_final_json(api_response):
     """
@@ -310,7 +390,4 @@ if __name__ == "__main__":
                     print("\n报告已保存为 'final_investment_report.json'")
                 else:
                     print("提取数据失败，请检查日志。")
-
     
-
-
