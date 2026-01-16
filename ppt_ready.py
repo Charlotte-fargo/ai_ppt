@@ -486,7 +486,7 @@ def generate_image_slides(prs, content,image_slide_layout, images_dir, dark_blue
 
     else:
         print(f"    未找到匹配的图片")
-    if content == "资金流" and matched_image_path::
+    if content == "资金流" and matched_image_path:
         add_image_annotations(img_slide, matched_image_path)
     # 清理未使用的占位符
     clean_slide_after_insertion(img_slide)
