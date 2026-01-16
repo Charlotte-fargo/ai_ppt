@@ -313,10 +313,10 @@ def process_article_by_category(articles, output_dir, articles_dir, images_dir):
                 # 4. 生成文件名逻辑
                 # 情况 A: 特殊分类 - 个股投资观点更新 (强制来源 bloomberg，标题 NONE)
                 if safe_category == "个股投资观点更新":
-                    safe_category =="资金流"
+                    safe_category ="资金流"
                     safe_data_source = "彭博"
                     final_title = "NONE"
-                    img_file_name = f"{"资金流"}_{final_title}_{safe_data_source}{img_ext}"
+                    img_file_name = f"{safe_category}_{final_title}_{safe_data_source}{img_ext}"
 
                 # 情况 B: 特殊分类 - 精选类 (只保留分类名)
                 elif safe_category in ["个股精选", "个债精选"]:
@@ -407,3 +407,4 @@ def json_main(json_path):
 if __name__ == "__main__":
 
     json_main("articles.json")
+
