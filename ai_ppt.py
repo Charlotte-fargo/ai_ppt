@@ -164,10 +164,13 @@ def main_app():
             
             template_path = get_template_path(location_name)
             output_filename = f"AI_PPT_generated_{location_name}.pptx"
+            final_output_path = os.path.join(config.OUTPUT_DIR, output_filename)
             
             # 确保输出目录存在 (使用 config.OUTPUT_DIR)
             os.makedirs(config.OUTPUT_DIR, exist_ok=True)
+            
             generator = PPTGenerator(final_json_data, template_path, images_dir, location_name)
+            
         
             # 假设 run 方法接收输出路径
             success = generator.run(final_output_path)
