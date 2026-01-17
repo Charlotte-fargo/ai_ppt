@@ -17,13 +17,12 @@ import config
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class PPTGenerator:
-    def __init__(self, template_path, json_path, images_dir, location_name):
+    def __init__(self, data, template_path, images_dir, location_name):
+        self.data = data
         self.template_path = template_path
-        self.json_path = json_path
         self.images_dir = images_dir
         self.location = location_name
         self.prs = None
-        self.data = None
 
     def load_resources(self):
         """加载模板和JSON数据"""
