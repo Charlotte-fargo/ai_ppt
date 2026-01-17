@@ -32,11 +32,6 @@ class PPTGenerator:
             self.prs = Presentation(self.template_path)
             # logging.info(f"模板加载成功，共有 {len(self.prs.slide_layouts)} 个布局")
 
-            if not os.path.exists(self.json_path):
-                raise FileNotFoundError(f"数据文件未找到: {self.json_path}")
-            
-            with open(self.json_path, "r", encoding="utf-8") as f:
-                self.data = json.load(f)
             logging.info("资源加载成功")
         except Exception as e:
             logging.error(f"资源加载失败: {e}")
