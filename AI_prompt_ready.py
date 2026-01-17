@@ -15,7 +15,7 @@ class AIPromptRunner:
     def __init__(self):
         # 从配置中读取参数
         self.api_base = config.API_BASE_URL
-        self.token = config.API_TOKEN
+        # self.token = config.API_TOKEN
         # self.input_dir = config.INPUT_BASE_DIR
         self.AUTH_URL = config.AUTH_URL
         self.CLIENT_ID = config.CLIENT_ID
@@ -229,7 +229,19 @@ class AIPromptRunner:
             logging.error(f"保存失败: {e}")
             return False
 
-
+    def get_access_token_b(self):
+        payload = {
+            'grant_type': 'client_credentials',
+            'client_id': self.CLIENT_ID,
+            'client_secret': self.CLIENT_SECRET
+        }
+        try:
+            resp = requests.post(self.AUTH_URL, data=payload)
+            resp.raise_for_status()
+            return resp.json().get('access_token')
+        except Exception as e:
+            print(f" 认证失败: {e}")
+            return None
     # ================= 4. 主流程入口 =================
 
     def run(self, specific_folder=None):
@@ -238,7 +250,8 @@ class AIPromptRunner:
         if not self.load_files(specific_folder):
             logging.error("文件加载失败，流程终止")
             return None
-        
+        token = self.get_access_token_b()
+        self.token = token
         # 2. 提交任务
         job_id = self.submit_job()
         if not job_id:
