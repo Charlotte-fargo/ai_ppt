@@ -9,8 +9,7 @@ import logging
 # 确保 construct_json, ai_prompt, ppt_ready 都在同一目录下
 from construct_json import json_main
 from AI_prompt_ready import AIPromptRunner
-from ppt_ready import generate_ppt_from_json
-
+from ppt_ready import PPTGenerator
 # --- 引入配置文件 ---
 import config
 
@@ -168,9 +167,10 @@ def main_app():
             
             # 确保输出目录存在 (使用 config.OUTPUT_DIR)
             os.makedirs(config.OUTPUT_DIR, exist_ok=True)
-            
-            # 调用封装好的生成函数
-            success = generate_ppt_from_json(report_path, template_path, output_filename, location_name, images_dir)
+            generator = PPTGenerator(final_json_data, template_path, images_dir, location)
+        
+            # 假设 run 方法接收输出路径
+            success = generator.run(final_output_path)
             
             if success:
                 progress_bar.progress(100)
