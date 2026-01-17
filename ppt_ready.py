@@ -450,33 +450,58 @@ class PPTGenerator:
                 for run in p.runs:
                     self._set_text_style(run, font_name='Arial', size=9)
 
-    def run(self, output_filename):
-        """执行全流程"""
+    def run(self, output_path):
+        """
+        执行全流程
+        :param output_path: 完整的输出文件路径 (包含目录和文件名)
+        :return: Boolean (True 表示成功, False 表示失败)
+        """
         logging.info(f"开始生成 PPT - 地点: {self.location}")
-        self.load_resources()
         
-        self.create_cover()
-        self.create_summary()
-        self.create_content_pages()
-        self.create_image_slide("个债精选")
-        self.create_image_slide("个股精选")
-        self.create_image_slide("资金流")
-        self.create_contact_page()
-        self.create_disclaimer_pages()
-        
-        # 保存
-        os.makedirs(config.OUTPUT_DIR, exist_ok=True)
-        out_path = os.path.join(config.OUTPUT_DIR, output_filename)
-        
-        if os.path.exists(out_path):
-            try:
-                os.remove(out_path)
-            except PermissionError:
-                logging.error("文件被占用，无法删除旧文件")
-                return
+        try:
+            # 1. 加载数据
+            self.load_resources()
+            
+            # 2. 按顺序创建页面
+            self.create_cover()              # 封面
+            self.create_summary()            # 摘要
+            self.create_content_pages()      # 核心内容
+            
+            # 图片页 (根据 key 查找图片)
+            self.create_image_slide("个债精选")
+            self.create_image_slide("个股精选")
+            self.create_image_slide("资金流")
+            
+            self.create_contact_page()       # 封底/联系
+            self.create_disclaimer_pages()   # 免责声明
+            
+            # 3. 确保目标目录存在 (虽然 main.py 做了，这里再做一次保险)
+            output_dir = os.path.dirname(output_path)
+            if output_dir:
+                os.makedirs(output_dir, exist_ok=True)
+            
+            # 4. 删除旧文件 (防止权限报错)
+            if os.path.exists(output_path):
+                try:
+                    os.remove(output_path)
+                except PermissionError:
+                    logging.error(f"文件被占用，无法覆盖: {output_path}")
+                    return False
 
-        self.prs.save(out_path)
-        logging.info(f"PPT 生成完成: {out_path} (共 {len(self.prs.slides)} 页)")
+            # 5. 保存文件
+            self.prs.save(output_path)
+            logging.info(f"PPT 生成完成: {output_path} (共 {len(self.prs.slides)} 页)")
+            
+            # ----------------------------------------
+            # 【关键】必须返回 True，否则 main.py 会认为失败
+            # ----------------------------------------
+            return True
+
+        except Exception as e:
+            logging.error(f"PPT 生成过程中发生异常: {str(e)}")
+            import traceback
+            logging.error(traceback.format_exc())
+            return False
 
 
 # ================= 对外接口函数 =================
