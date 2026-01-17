@@ -157,7 +157,7 @@ def main_app():
                 return
             
             # Runner 默认保存为 final_investment_report.json
-            report_path = "final_investment_report.json"
+            report_path = final_json_data
             progress_bar.progress(80)
 
             # --- 阶段 4: 生成 PPT ---
