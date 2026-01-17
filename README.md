@@ -1,6 +1,6 @@
 # 📊 Streamlit 前端应用文档
 
-`stream.py` 是一个基于 **Streamlit** 构建的用户友好的 Web 应用界面，提供一键式的投资报告生成体验。
+`main.py` 是一个基于 **Streamlit** 构建的用户友好的 Web 应用界面，提供一键式的投资报告生成体验。
 
 ---
 
