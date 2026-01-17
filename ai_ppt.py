@@ -167,7 +167,7 @@ def main_app():
             
             # 确保输出目录存在 (使用 config.OUTPUT_DIR)
             os.makedirs(config.OUTPUT_DIR, exist_ok=True)
-            generator = PPTGenerator(final_json_data, template_path, images_dir, location)
+            generator = PPTGenerator(final_json_data, template_path, images_dir, location_name)
         
             # 假设 run 方法接收输出路径
             success = generator.run(final_output_path)
