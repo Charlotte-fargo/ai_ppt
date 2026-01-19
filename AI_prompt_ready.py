@@ -12,7 +12,7 @@ import config  # 引入配置文件
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class AIPromptRunner:
-    def __init__(self):
+    def __init__(self, language=None):
         # 从配置中读取参数
         self.api_base = config.API_BASE_URL
         # self.token = config.API_TOKEN
@@ -22,6 +22,12 @@ class AIPromptRunner:
         self.CLIENT_SECRET = config.CLIENT_SECRET
         self.model_name = config.AI_MODEL_NAME
         self.metadata = config.API_METADATA
+        if language == "en":
+            self.prompt = config.AI_INSTRUCTION_PROMPT_en
+            self.AI_system_prompt = config.AI_SYSTEM_PROMPT_en
+        else:
+            self.prompt = config.AI_INSTRUCTION_PROMPT_cn
+            self.AI_system_prompt = config.AI_SYSTEM_PROMPT_cn
 
         
         # 运行时状态
@@ -81,7 +87,7 @@ class AIPromptRunner:
             return None
 
         # 1. 拼接 System Prompt 和 Context
-        full_text = f"{config.AI_SYSTEM_PROMPT}\n\n========== 原始文档内容 ==========\n{self.context_text}"
+        full_text = f"{self.AI_system_prompt}\n\n========== 原始文档内容 ==========\n{self.context_text}"
         
         # 2. Base64 编码
         try:
@@ -97,7 +103,7 @@ class AIPromptRunner:
             "input": {
                 "parameter": {
                     "model_name": self.model_name,
-                    "prompt": config.AI_INSTRUCTION_PROMPT  # "请阅读附件..."
+                    "prompt": self.prompt  # "请阅读附件..."
                 },
                 "resource": [
                     {
