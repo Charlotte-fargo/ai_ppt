@@ -58,12 +58,26 @@ def save_temp_json(data, filename='articles.json'):
         logging.error(f"保存 {filename} 失败: {e}")
         return False
 
-def get_template_path(location_name):
+def choose_template(location_name, language="cn"):
+    """根据地点和语言选择模板"""
+    # 获取地点对应的模板映射
+    location_templates = config.TEMPLATE_MAP.get(location_name, config.TEMPLATE_MAP["香港"])
+    
+    # 根据语言选择模板
+    template_path = location_templates.get(language, location_templates["cn"])
+    
+    # 检查文件是否存在，如果不存在则使用默认语言
+    if not os.path.exists(template_path):
+        template_path = location_templates["cn"]
+    
+    return template_path
+
+def get_language(language):
     """根据 config 映射获取模板路径"""
     # 默认为香港模板
-    rel_path = config.TEMPLATE_MAP.get(location_name, config.TEMPLATE_MAP["香港"])
+    rel_language = config.LANGUAGE_MAP.get(language, config.LANGUAGE_MAP["中文/Chinese"])
     # Streamlit 中直接使用相对路径通常没问题
-    return os.path.abspath(rel_path)
+    return rel_language
 
 # ================= 2. 密码验证逻辑 =================
 
@@ -88,98 +102,132 @@ def check_password():
 # ================= 3. Streamlit 主界面 =================
 
 def main_app():
-    # 1. 标题和 Logo
-    # st.image("logo.png", width=200) # 如有 logo 可解开注释
-    st.title("EasyView 自动化报告系统")
+    # --- 0. 页面样式优化 (CSS) ---
+    st.markdown("""
+        <style>
+        .stButton>button {
+            height: 3em;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .reportview-container .main .block-container{
+            padding-top: 2rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # --- 1. 标题区域 ---
+    col_logo, col_title = st.columns([1, 5], gap="medium", vertical_alignment="center")
+    
+    with col_logo:
+        # use_container_width=True 让图片自动填满这 1 份的宽度，不用手动设 width
+        st.image("logo.png", width='stretch') 
+        
+    with col_title:
+        # 使用 markdown 的 # 号，并去除默认的 margin (空白)，让它和 Logo 贴得更紧
+        st.markdown(
+            """
+            <h1 style='margin-bottom: 0px; margin-top: 0px;'>EasyView 自动化报告系统</h1>
+            <p style='font-size: 16px; color: gray; margin-top: -5px;'>Automated Investment Report Generator</p>
+            """, 
+            unsafe_allow_html=True
+        )
+
+    st.markdown("---")
+    # 2. 设置区 (使用两列布局，解决“乱”的问题)
+    with st.container():
+        st.subheader("1. 设置 / Settings")
+        c1, c2 = st.columns(2)
+        
+        with c1:
+            location_name = st.radio(
+                "📍 目标地点 / Destination:",
+                ("中国大陆/China", "香港/Hong Kong", "新加坡/Singapore"),
+                index=0,
+                horizontal=True
+            )
+            
+        with c2:
+            language = st.radio(
+                "🗣️ 目标语言 / Language:",
+                ("中文/Chinese", "英文/English"),
+                index=0,
+                horizontal=True
+            )
+
     st.markdown("---")
 
-    # 2. 设置区
-    st.header("1. 设置")
-    
-    # 地点选择 (使用 config 中的 Key)
-    location_name = st.radio(
-        "请选择 PPT 目标地点:",
-        ("中国大陆", "香港", "新加坡"),
-        index=0,
-        horizontal=True
-    )
-    
-    st.sidebar.success("✅ 已登录")
-    
     # 3. 执行区
-    st.header("2. 执行")
+    st.subheader("2. 执行 / Execute")
     
-    if st.button("🚀 开始生成 PPT", type="primary", use_container_width=True):
-        
-        # 初始化进度条
+    # 一个醒目的大按钮
+    start_btn = st.button("🚀 开始生成 PPT / Start Generation", type="primary", use_container_width=True)
+    
+    if start_btn:
+        # --- 这里改回了你想要的简单进度条模式 ---
         status_text = st.empty()
         progress_bar = st.progress(0)
         
         try:
-            # --- 阶段 1: 抓取文章 ---
-            status_text.text("Step 1/4: 连接 News Platform 获取数据...")
+            # === Step 1 ===
+            status_text.markdown("**Step 1/4:** 正在连接 News Platform 获取数据... (Connecting...)")
             progress_bar.progress(10)
             
             token = get_news_platform_token()
             if not token:
-                st.error("无法获取 News Token，请检查 config.py")
+                st.error("❌ 无法获取 News Token")
                 return
 
             articles = fetch_articles(token)
             if not articles or articles == "EXPIRED":
-                st.error("文章列表为空或 Token 失效")
+                st.error("❌ 文章列表为空或 Token 失效")
                 return
             
             save_temp_json(articles, 'articles.json')
             progress_bar.progress(30)
 
-            # --- 阶段 2: 处理素材 ---
-            status_text.text("Step 2/4: 下载图片并整理素材...")
-            # json_main 返回处理后的文章目录路径
+            # === Step 2 ===
+            status_text.markdown("**Step 2/4:** 正在下载图片并整理素材... (Downloading images...)")
+            # json_main logic...
             articles_dir, images_dir = json_main("articles.json")
             
             if not articles_dir or not os.path.exists(articles_dir):
-                st.error("文件处理失败，无法生成文章目录")
+                st.error("❌ 文件处理失败")
                 return
             progress_bar.progress(50)
 
-            # --- 阶段 3: AI 生成 ---
-            status_text.text("Step 3/4: AI 正在撰写报告 (需约 1-2 分钟)...")
+            # === Step 3 ===
+            status_text.markdown("**Step 3/4:** AI 正在撰写报告，请稍候... (AI Writing...)")
             
-            # 实例化 Runner (自动从 config 读取 Token)
-            runner = AIPromptRunner()
-            # 运行 AI 任务
+            language_code = get_language(language)
+            print(f"Init AIPromptRunner with language={language_code}")
+            
+            runner = AIPromptRunner(language=language_code)
             final_json_data = runner.run(specific_folder=articles_dir)
             
             if not final_json_data:
-                st.error("AI 生成失败，请查看后台日志")
+                st.error("❌ AI 生成失败")
                 return
             
-            # Runner 默认保存为 final_investment_report.json
-            report_path = final_json_data
             progress_bar.progress(80)
 
-            # --- 阶段 4: 生成 PPT ---
-            status_text.text(f"Step 4/4: 正在渲染 {location_name} 版 PPT...")
+            # === Step 4 ===
+            status_text.markdown(f"**Step 4/4:** 正在渲染 {location_name} 版 PPT... (Rendering PPT...)")
             
-            template_path = get_template_path(location_name)
-            output_filename = f"AI_PPT_generated_{location_name}.pptx"
+            template_path = choose_template(location_name, language_code)
+            output_filename = f"AI_PPT_generated_{location_name}_{language_code}.pptx"
             final_output_path = os.path.join(config.OUTPUT_DIR, output_filename)
             
-            # 确保输出目录存在 (使用 config.OUTPUT_DIR)
             os.makedirs(config.OUTPUT_DIR, exist_ok=True)
             
-            generator = PPTGenerator(final_json_data, template_path, images_dir, location_name)
-            
-        
-            # 假设 run 方法接收输出路径
+            generator = PPTGenerator(final_json_data, template_path, images_dir, location_name, language=language_code)
             success = generator.run(final_output_path)
             
             if success:
                 progress_bar.progress(100)
-                status_text.success("✅ PPT 生成完成！")
+                status_text.success("✅ PPT 生成完成！(Generation Complete)")
                 
-                # 构建下载路径
+                # 生成成功后的下载按钮
                 real_file_path = os.path.join(config.OUTPUT_DIR, output_filename)
                 
                 if os.path.exists(real_file_path):
@@ -189,31 +237,20 @@ def main_app():
                             data=file,
                             file_name=output_filename,
                             mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                            use_container_width=True
+                            use_container_width=True,
+                            type="primary"
                         )
                 else:
-                    st.error(f"错误：找不到生成的文件 {real_file_path}")
+                    st.error("❌ 文件生成路径异常")
             else:
-                st.error("PPT 生成过程中发生错误")
+                st.error("❌ PPT 生成过程中发生错误")
 
         except Exception as e:
-            st.error(f"发生未捕获异常: {str(e)}")
+            st.error(f"❌ 发生异常: {str(e)}")
             logging.exception("运行出错")
 
-# ================= 程序入口 =================
-
+# 入口保持不变
 if __name__ == "__main__":
-    # 配置页面属性
-    st.set_page_config(
-        page_title="EasyView 报告生成器",
-        page_icon="📊",
-        layout="centered"
-    )
-    
-    # 检查 config.py 是否配置
-    if "在此处填入" in config.API_TOKEN:
-        st.warning("⚠️ 警告: config.py 中的 API_TOKEN 尚未配置！")
-
-    # 密码验证通过后才显示主程序
+    st.set_page_config(page_title="EasyView Report", page_icon="📊", layout="centered")
     if check_password():
         main_app()
