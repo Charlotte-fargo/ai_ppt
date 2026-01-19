@@ -9,7 +9,7 @@ from pptx import Presentation
 from pptx.util import Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
-
+from deep_translator import GoogleTranslator
 # 引入配置文件
 import config
 
@@ -17,11 +17,12 @@ import config
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class PPTGenerator:
-    def __init__(self, data, template_path, images_dir, location_name):
+    def __init__(self, data, template_path, images_dir, location_name, language):
         self.data = data
         self.template_path = template_path
         self.images_dir = images_dir
         self.location = location_name
+        self.language = language
         self.prs = None
 
     def load_resources(self):
@@ -79,27 +80,85 @@ class PPTGenerator:
                     sp.getparent().remove(sp)
                 except Exception:
                     pass
+    def _remove_all_text_placeholders(self, slide):
+        """移除幻灯片中所有的文本占位符"""
+        for shape in list(slide.shapes):
+            if shape.is_placeholder and shape.placeholder_format.type == 15:
+                try:
+                    sp = shape._element
+                    sp.getparent().remove(sp)
+                except Exception:
+                    pass
+    def _get_standard_keys(self, title):
+        """
+        根据文章标题中的关键词，返回该资产类别的【中文标准名称】。
+        """
+        title_map = {
+            # 关键词 : 中文标准名
+            "US Equities": "美股",
+            "HK/China Equities": "中港股市",
+            "EU Equities": "欧股", 
+            "Japan Equities": "日股",
+            "Fixed Income": "债券",
+            "Gold": "黄金",
+            "Crude Oil": "原油",
+            "Cash flow": "资金流",
+            "Bond Selection": "个债精选",   
+            "Stock Selection": "个股精选",
+            "债市": "债券"
+        }
+        
+        # 统一转为小写进行匹配（不区分大小写）
+        title_lower = title.lower()
+        
+        # 遍历映射表，如果标题包含关键词，就返回对应的中文标准名
+        for keyword, chinese_name in title_map.items():
+            keyword_lower = keyword.lower()
+            if keyword_lower in title_lower:
+                return chinese_name
+        
+        # 如果没有匹配到，返回原始标题的前2个字
+        return title[:2]
 
-    def _find_matching_image(self, title, match_len=2):
-        """根据内容标题开头查找匹配的图片"""
-        if not os.path.exists(self.images_dir):
-            logging.warning(f"图片目录不存在: {self.images_dir}")
+    def _find_matching_image(self, title, images_dir):
+        """
+        图片匹配：先找到对应的中文标准名，再取前2个字进行匹配
+        """
+        if not os.path.exists(images_dir):
+            logging.warning(f"图片目录不存在: {images_dir}")
             return None
         
-        # 清理标题
-        cleaned = re.sub(r'[【】\[\]()（）,，.。、/\\|]', '', title).replace(' ', '').strip()
-        parts = cleaned.split('_')
-        key = parts[0][:match_len] if len(parts[0]) >= match_len else parts[0]
-        # 特殊规则
-        if "债市" in parts[0]: key = "债券"
-        print(f"    查找匹配图片，标题开头: '{key}'")
-        logging.debug(f"查找图片: 原始标题='{title}', 关键字='{key}'")
-
+        # 1. 先通过_get_standard_keys获取中文标准名
+        chinese_name = self._get_standard_keys(title)
+        
+        # 2. 取中文标准名的前2个字作为键
+        if len(chinese_name) >= 2:
+            key = chinese_name[:2]
+        else:
+            key = chinese_name
+        
+        # 如果没有有效的键，返回None
+        if not key or len(key.strip()) == 0:
+            return None
+        
+        # 打印调试信息
+        print(f"    查找图片，原始标题: '{title}'")
+        print(f"    中文标准名: '{chinese_name}'")
+        print(f"    使用键: '{key}'")
+        
+        # 支持的图片格式
         image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
-        for f in os.listdir(self.images_dir):
-            if any(f.lower().endswith(ext) for ext in image_extensions):
-                if f.startswith(key):
-                    return os.path.join(self.images_dir, f)
+        
+        # 遍历图片目录，只匹配以键开头的文件名
+        for filename in os.listdir(images_dir):
+            # 检查是否为图片文件
+            if any(filename.lower().endswith(ext.lower()) for ext in image_extensions):
+                # 文件名以键开头（精确匹配）
+                if filename.startswith(key):
+                    print(f"    匹配成功: 键 '{key}' -> 图片 '{filename}'")
+                    return os.path.join(images_dir, filename)
+        
+        print(f"    警告: 未找到以 '{key}' 开头的图片")
         return None
 
     def _fill_image(self, slide, image_path):
@@ -135,23 +194,48 @@ class PPTGenerator:
             file_name = os.path.basename(image_path)
             parts = os.path.splitext(file_name)[0].split('_')
 
-            # A. 添加图表标题
+           
             if len(parts) >= 2:
                 chart_title = parts[1]
+                
+                # 1. 翻译逻辑 (如果是英文模式)
+                is_english_mode = (self.language == 'en') # 标记是否为英文模式
+                
+                if chart_title and chart_title != "NONE" and is_english_mode:
+                    try:
+                        from deep_translator import GoogleTranslator
+                        chart_title = GoogleTranslator(source='auto', target='en').translate(chart_title)
+                    except Exception as e:
+                        print(f"Translation failed: {e}")
+
                 if chart_title and chart_title != "NONE":
                     cfg = config.ANNOTATION_CONFIG['title']
                     
-                    # 动态调整左边距
+                    # 2. 动态调整左边距 (英文和中文长度判断标准不同)
                     offset = Pt(0)
-                    if len(chart_title) > 20: offset = Pt(80)
-                    elif len(chart_title) > 10: offset = Pt(30)
+                    print(f"length of chart title '{chart_title}': {len(chart_title)}")
+                    if is_english_mode:
+                        # 英文判断逻辑 (字符数较多，但 Arial Narrow 比较省空间)
+                        if len(chart_title) > 75: offset = Pt(140)
+                        elif len(chart_title) > 40: offset = Pt(60)
+                        elif len(chart_title) > 54: offset = Pt(70)
+                    else:
+                        # 中文判断逻辑
+                        if len(chart_title) > 20: offset = Pt(80)
+                        elif len(chart_title) > 10: offset = Pt(30)
+                    
                     
                     t_left = cfg['left_base'] - offset
                     
                     textbox = slide.shapes.add_textbox(t_left, cfg['top'], cfg['width'], cfg['height'])
                     run = textbox.text_frame.paragraphs[0].add_run()
                     run.text = chart_title
-                    self._set_text_style(run, font_name=cfg['font_name'], size=cfg['size'], bold=True)
+                    
+                    # 3. 设置字体样式：如果是英文，强制使用 Arial Narrow
+                    # 注意："Arial Narrow" 是字体名，bold=True 是加粗
+                    font_to_use = "Arial Narrow" if is_english_mode else cfg['font_name']
+                    
+                    self._set_text_style(run, font_name=font_to_use, size=cfg['size'], bold=True)
 
             # B. 添加资料来源
             source_text = ""
@@ -177,7 +261,11 @@ class PPTGenerator:
                 # 确保每次都是新段落
                 p = textbox.text_frame.paragraphs[0]
                 if not p.runs: p.add_run()
-                p.runs[0].text = f"资料来源：{source_text}"
+                if self.language == "en":
+                    print(f"Adding source annotation in English: {source_text}")
+                    p.runs[0].text = f"Source: {source_text}"
+                else:
+                    p.runs[0].text = f"资料来源：{source_text}"
                 
                 self._set_text_style(p.runs[0], font_name=cfg_s['font_name'], size=cfg_s['size'], color=config.COLOR_GRAY)
 
@@ -238,11 +326,14 @@ class PPTGenerator:
         """生成摘要页"""
         slide = self.prs.slides[1]
         summary = self.data.get("executive_summary", {})
-        
+        if self.language == "en":
+            size = 24
+        else:
+            size = 29.1
         # 标题
         if slide.shapes[0].has_text_frame:
             self._set_text_style(slide.shapes[0].text_frame.paragraphs[0].runs[0], 
-                                 size=29.1, bold=True, color=config.COLOR_DARK_BLUE)
+                                 size=size, bold=True, color=config.COLOR_DARK_BLUE)
 
         # 表格
         try:
@@ -328,7 +419,7 @@ class PPTGenerator:
                     if paragraph.runs and len(paragraph.runs) > 0:
                         run = paragraph.runs[0]
                         run.font.name = '华文细黑'
-                        run.font.size = Pt(29.1)
+                        run.font.size = Pt(24.1)
                         run.font.bold = True
                         run.font.color.rgb = config.COLOR_DARK_BLUE
 
@@ -350,7 +441,7 @@ class PPTGenerator:
                 print(f"Slide {i+1} Body Text added")
 
             # 图片
-            matched_image_path = self._find_matching_image(content["title"], match_len=2)
+            matched_image_path = self._find_matching_image(content["title"], images_dir=self.images_dir)
             if matched_image_path:
                 self._fill_image(slide, matched_image_path)
                 # 内容页总是添加注释 
@@ -359,20 +450,77 @@ class PPTGenerator:
             self._remove_all_picture_placeholders(slide)
             print("-" * 50)
 
-
+    def _format_title_placeholder(self, placeholder, text):
+        """设置标题占位符的字体格式"""
+        if placeholder and placeholder.has_text_frame:
+            placeholder.text = text
+            text_frame = placeholder.text_frame
+            
+            # 清除原有格式（如果有多个段落）
+            for paragraph in text_frame.paragraphs:
+                for run in paragraph.runs:
+                    run.font.name = '华文细黑'
+                    run.font.size = Pt(24.1)
+                    run.font.bold = True
+                    run.font.color.rgb = config.COLOR_DARK_BLUE
+            
+            # 确保至少有一个段落
+            if text_frame.paragraphs and len(text_frame.paragraphs) > 0:
+                paragraph = text_frame.paragraphs[0]
+                # 确保至少有一个run
+                if not paragraph.runs:
+                    paragraph.text = text
+                    run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
+                else:
+                    run = paragraph.runs[0]
+                
+                # 应用字体格式
+                run.font.name = '华文细黑'
+                run.font.size = Pt(24.1)
+                run.font.bold = True
+                run.font.color.rgb = config.COLOR_DARK_BLUE
     def create_image_slide(self, topic):
         """生成纯图页"""
         layout = self.prs.slide_layouts[config.LAYOUT_IDX['image_only']]
         slide = self.prs.slides.add_slide(layout)
         
-        slide.placeholders[0].text = topic
+        # 设置标题并应用字体格式
+        title_ph = slide.placeholders[0]
+        if title_ph and title_ph.has_text_frame:
+            title_ph.text = topic
+            text_frame = title_ph.text_frame
+            
+            # 清除原有格式（如果有多个段落）
+            for paragraph in text_frame.paragraphs:
+                for run in paragraph.runs:
+                    run.font.name = '华文细黑'
+                    run.font.size = Pt(24.1)
+                    run.font.bold = True
+                    run.font.color.rgb = config.COLOR_DARK_BLUE
+            
+            # 确保至少有一个段落
+            if text_frame.paragraphs and len(text_frame.paragraphs) > 0:
+                paragraph = text_frame.paragraphs[0]
+                # 确保至少有一个run
+                if not paragraph.runs:
+                    paragraph.text = topic
+                    run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
+                else:
+                    run = paragraph.runs[0]
+                
+                # 应用字体格式
+                run.font.name = '华文细黑'
+                run.font.size = Pt(24.1)
+                run.font.bold = True
+                run.font.color.rgb = config.COLOR_DARK_BLUE
         
-        img_path = self._find_matching_image(topic, match_len=2)
+        # 查找并添加图片
+        img_path = self._find_matching_image(topic, images_dir=self.images_dir)
         if img_path:
             self._fill_image(slide, img_path)
             
             # 仅资金流加注释
-            if topic == "资金流":
+            if topic == "资金流" or topic == "Cash Flow":
                 self._add_image_annotations(slide, img_path)
         
         self._remove_all_picture_placeholders(slide)
@@ -381,24 +529,55 @@ class PPTGenerator:
         """生成联系页"""
         layout = self.prs.slide_layouts[config.LAYOUT_IDX['contact']]
         slide = self.prs.slides.add_slide(layout)
-        slide.placeholders[0].text = "联系我们"
-
+        # 根据语言设置标题文本
+        title_text = "Contact Us" if self.language == "en" else "联系我们"
+        
+        # 设置标题并应用字体格式（使用公共方法）
+        title_ph = slide.placeholders[0]
+        self._format_title_placeholder(title_ph, title_text)
         # 主文本框 (索引15)
         try:
-            tf = slide.placeholders[15].text_frame
-            tf.clear()
-            p = tf.paragraphs[0]
-            r = p.add_run()
-            r.text = "www.fargowealth.com"
-            r.font.underline = True
-            
-            p2 = tf.add_paragraph()
-            p2.text = "资产管理服务由集团旗下公司绅士资本提供"
+            if self.location == "香港/Hong Kong":
+                # 1. 获取配置
+                cfg = config.ANNOTATION_CONFIG['contact_info']
+                
+                # 2. 创建文本框 (位置：Left=1.06cm, Top=2.96cm)
+                textbox = slide.shapes.add_textbox(cfg['left'], cfg['top'], cfg['width'], cfg['height'])
+                tf = textbox.text_frame
+                tf.word_wrap = True  # 允许自动换行
+
+                # --- 第一行：网址 ---
+                p1 = tf.paragraphs[0]
+                run1 = p1.add_run()
+                run1.text = "www.fargowealth.com"
+                # 应用样式 (加粗，蓝色或黑色根据 config)
+                self._set_text_style(run1, font_name=cfg['font_name'], size=cfg['size'], bold=False)
+                run1.font.underline = True # 网址加下划线
+
+                # --- 第二行：声明文字 ---
+                p2 = tf.add_paragraph()
+                if self.language == "en":
+                    p2.text = "Asset management services are provided by Gentlemen Capital, a subsidiary of the Group."
+                else:
+                    p2.text = "资产管理服务由集团旗下公司绅士资本提供"
+                
+                # 为第二行应用样式 (通常声明文字不加粗，字号可以稍微调小一点)
+                if p2.runs:
+                    self._set_text_style(p2.runs[0], font_name=cfg['font_name'], size=cfg['size'], bold=False)
+
+            else:
+                # 非香港地区，移除所有文本占位符
+                self._remove_all_text_placeholders(slide)
+
         except KeyError:
             pass
-
+        if self.language == "en":
+            print("Adding contact info in English")
+            CONTACT_ADDRESSES = config.CONTACT_ADDRESSES_en
+        else:
+            CONTACT_ADDRESSES = config.CONTACT_ADDRESSES
         # 地址列表
-        for idx, text in config.CONTACT_ADDRESSES.items():
+        for idx, text in CONTACT_ADDRESSES.items():
             try:
                 tf = slide.placeholders[idx].text_frame
                 tf.clear()
@@ -445,28 +624,38 @@ class PPTGenerator:
                 for run in p.runs:
                     self._set_text_style(run, font_name='Arial', size=9)
 
-    def run(self, output_path):
+    def run(self,output_path):
         """
         执行全流程
         :param output_path: 完整的输出文件路径 (包含目录和文件名)
         :return: Boolean (True 表示成功, False 表示失败)
         """
         logging.info(f"开始生成 PPT - 地点: {self.location}")
+        # logging.info(f"开始生成 PPT - 地点: {self.location}")
+        
+        # --- 调试代码：查看当前 self.language 到底是什么 ---
+        logging.info(f"DEBUG: 当前对象存储的语言为: '{self.language}'")
         
         try:
             # 1. 加载数据
             self.load_resources()
-            
+         
             # 2. 按顺序创建页面
             self.create_cover()              # 封面
             self.create_summary()            # 摘要
             self.create_content_pages()      # 核心内容
             
             # 图片页 (根据 key 查找图片)
-            self.create_image_slide("个债精选")
-            self.create_image_slide("个股精选")
-            self.create_image_slide("资金流")
-            
+            if self.language == "en":
+                logging.info("添加英文版图片页")
+                self.create_image_slide("Stock Selection")
+                self.create_image_slide("Bond Selection")
+                self.create_image_slide("Cash Flow")
+            else:
+                self.create_image_slide("个股精选")
+                self.create_image_slide("个债精选")
+                self.create_image_slide("资金流")
+
             self.create_contact_page()       # 封底/联系
             self.create_disclaimer_pages()   # 免责声明
             
@@ -501,16 +690,17 @@ class PPTGenerator:
 
 # ================= 对外接口函数 =================
 
-def generate_ppt_from_json(json_path, template_path, output_filename, location_name, images_dir):
-    """
-    供 main.py 调用的简易接口函数
-    """
+def generate_ppt_from_json(json_path, template_path, output_filename, location_name, images_dir, language="cn"):
     try:
-        generator = PPTGenerator(template_path, json_path, images_dir, location_name)
-        generator.run(output_filename)
-        return True
+        # 1. Must load the JSON first
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            
+        # 2. Pass data (dict), not the path (string)
+        generator = PPTGenerator(data, template_path, images_dir, location_name, language)
+        return generator.run(output_filename)
     except Exception as e:
-        logging.error(f"PPT 生成过程中发生错误: {e}")
+        logging.error(f"PPT Generation Error: {e}")
         return False
 # 示例调用
 if __name__ == "__main__":
