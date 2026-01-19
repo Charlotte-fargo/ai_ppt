@@ -49,11 +49,11 @@ API_TOKEN = get_access_token_b(CLIENT_ID, CLIENT_SECRET)
 # ==============================================================================
 
 # 系统指令 (System Prompt)：定义 AI 的身份、任务目标和输出格式
-AI_SYSTEM_PROMPT = """
+AI_SYSTEM_PROMPT_cn = """
 你是一个专业的中文首席投资官助理。你需要阅读提供的金融市场分析文档，并生成一份标准化的投资观点报告。
 
 任务要求：
-    1. 生成7种资产的投资观点,资产类别包括中港股市、美股、欧股、日股、债市、黄金、原油这7类，请不要改一个字。如果提供的文档中缺少某种资产，请根据你的知识库合理推断或标记为"暂无数据"。投资逻辑中文字数必须在60到65字。以下生成的每一个bullet point字数必须在83字左右，三个bullet point总共的字数必须在230字以内。
+    1. 生成7种资产的投资观点,资产类别包括中港股市、美股、欧股、日股、债市、黄金、原油这7类，请不要改一个字。如果提供的文档中缺少某种资产，请根据你的知识库合理推断或标记为"暂无数据"。投资逻辑中文字数必须在70字。以下生成的每一个bullet point字数必须在83字左右，三个bullet point总共的字数必须在230字以内。
 
 硬性写作要求：
 - 标题格式为“资产类别名称：xxxxx”
@@ -81,9 +81,38 @@ AI_SYSTEM_PROMPT = """
 检查content_slides中的每个title的开头需要是资产类别中的，一个字都不能改。
 """
 
-# 指引指令 (Instruction Prompt)：放在 Parameter 中，指引 AI 去读取附件
-AI_INSTRUCTION_PROMPT = "请详细阅读附带的文件资源（resource），文件中包含了身份设定、具体指令以及需要分析的金融文档内容。请严格按照文件中的 JSON 格式要求输出结果。"
+        # === 英文 Prompt ===
+AI_SYSTEM_PROMPT_en = """
+        You are an English professional assistant to a Chief Investment Officer. Read the provided financial market analysis documents and generate a standardized investment outlook report. You do not need to show your analysis process, just output the final JSON result.
 
+        Task Requirements:
+        1. Generate investment views for 7 asset classes: HK/China Equities, US Equities, EU Equities, Japan Equities, Fixed Income, Gold, and Crude Oil. If a specific asset class is missing in the documents, infer reasonably from your knowledge base or mark it as "No Data Available". Strictly follow the output format below.Asset Title: Must be maximum 6 words. Format: "Asset Class: [Core View Summary]".For Asset:HK/China Equities,must be 5 words including HK/China Equities. Investment Rationale (Summary Logic): Must be approximately between 22 and 24 words. This should be a high-level concise summary.Each bullet point maximum 22 words or 150 characters.
+
+        Writing Requirements:
+        - Title format: "Asset Class Name: [Core View Summary]"
+        - Content must be maximum 3 bullet points.
+        - Each bullet point format: "Sub-title: [Detail]".
+        - Total word count per asset: around 60 words.
+        - Tone: Professional, concise, financial English.
+
+        Finally, output ONLY pure JSON. Do not include Markdown tags (like ```json). JSON structure:
+        {
+          "document": { "title": "Global Market Investment Outlook", "author":"CIO Office", "date": " " },
+          "executive_summary": { 
+              "columns": ["Asset Class", "Investment Logic"], 
+              "rows": [ {"Asset Class": "...", "Investment Logic": "..."} ] 
+          },
+          "content_slides": [ 
+              { "title": "...", "bullets": ["...", "..."] } 
+          ]
+        }
+        Note: Ensure the output JSON structure strictly adheres to the requirements, avoiding any formatting errors.
+        After generating each bullet point, check if the character count meets the requirements.
+        Check that each title in content_slides starts with one of the asset class names, without any alterations.
+        """
+# 指引指令 (Instruction Prompt)：放在 Parameter 中，指引 AI 去读取附件
+AI_INSTRUCTION_PROMPT_cn = "请详细阅读附带的文件资源（resource），文件中包含了身份设定、具体指令以及需要分析的金融文档内容。请严格按照文件中的 JSON 格式要求输出结果。"
+AI_INSTRUCTION_PROMPT_en = "Please carefully read the attached file resources (resource), which contain identity settings, specific instructions, and the content of financial documents to be analyzed. Please strictly follow the JSON format requirements in the file to output the results."
 # ==============================================================================
 # 3. 文件路径与目录配置
 # ==============================================================================
@@ -92,9 +121,22 @@ OUTPUT_DIR = "ai_generate"
 
 # PPT 模板路径映射 (根据用户选择的地点，自动匹配模板文件)
 TEMPLATE_MAP = {
-    "香港": "template/AI PPT v2.pptx",
-    "中国大陆": "template/AI PPT v3.pptx",
-    "新加坡": "template/AI PPT v2.pptx"
+    "香港": {
+        "cn": "template/AI PPT v2.pptx",  # 中文版
+        "en": "template/AI PPT v4.pptx"  # 英文版
+    },
+    "中国大陆": {
+        "cn": "template/AI PPT v3.pptx",  # 中文版
+        "en": "template/AI PPT v5.pptx"  # 英文版
+    },
+    "新加坡": {
+        "cn": "template/AI PPT v2.pptx",  # 中文版
+        "en": "template/AI PPT v4.pptx"  # 英文版
+    }
+}
+LANGUAGE_MAP = {
+    "中文/Chinese": "cn",
+    "英文/English": "en"
 }
 
 # ==============================================================================
@@ -125,7 +167,7 @@ ANNOTATION_CONFIG = {
         'width': 1616075,
         'height': 226581,
         'font_name': '华文细黑',
-        'size': 12
+        'size': 11
     },
     'source': {
         'top': 6316663,
@@ -134,6 +176,14 @@ ANNOTATION_CONFIG = {
         'height': 266700,
         'font_name': 'Microsoft YaHei',
         'size': 9
+    },
+    'contact_info': {
+        'left': 381600,
+        'top': 1065600,
+        'width': 4057200,
+        'height': 882000,
+        'font_name': 'Microsoft YaHei',
+        'size': 13
     }
 }
 
@@ -150,6 +200,15 @@ CONTACT_ADDRESSES = {
     18: "上海\n上海市黄浦区太仓路233号\n新茂大厦2204-2205室\n电话：+86 21 6333 8131",
     20: "深圳\n深圳市前海深港合作区兴海大道\n3040号前海世茂大厦2402室\n电话：+86 755 2691 3468",
     21: "杭州\n杭州市上城区新业路228号\n来福士中心T2办公楼1702-1703室\n电话：+86 571 8805 8596"
+}
+CONTACT_ADDRESSES_en = {
+    10: "Hong Kong\n2606-2607, 26/F, Two Exchange Square, 8 Connaught Place, Central, Hong Kong\nTel: +852 2956 9700",
+    17: "Singapore\n10 Marina Boulevard #16-05, Marina Bay Financial Centre Tower 2, Singapore 018983\nTel: +65 6509 0110",
+    19: "Fargo Space\n3301-3304, 33/F, Tower 5, The Gateway, Harbour City, Tsim Sha Tsui, Hong Kong\nTel: +852 2439 9745",
+    22: "Beijing\n1013, 10/F, West Tower, World Financial Center, No.1 East 3rd Ring Middle Road, Chaoyang District, Beijing\nTel: +86 10 6507 8234",
+    18: "Shanghai\n2204-2205, 22/F, The Platinum, No.233 Taicang Road, Huangpu District, Shanghai\nTel: +86 21 6333 8131",
+    20: "Shenzhen\n2402, 24/F, Qianhai Shimao Tower, No.3040 Xinghai Avenue, Nanshan District, Shenzhen\nTel: +86 755 2691 3468",
+    21: "Hangzhou\n1702-1703, 17/F, Tower 2 Raffles City, No.228 Xinye Road, Shangcheng District, Hangzhou\nTel: +86 571 8805 8596"
 }
 
 # 免责声明文案库
