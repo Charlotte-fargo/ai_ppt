@@ -97,7 +97,7 @@ AI_SYSTEM_PROMPT_en = """
 
         Finally, output ONLY pure JSON. Do not include Markdown tags (like ```json). JSON structure:
         {
-          "document": { "title": "Global Market Investment Outlook", "author":"CIO Office", "date": " " },
+          "document": { "title": "Global Investment Outlook", "author":"CIO Office", "date": " " },
           "executive_summary": { 
               "columns": ["Asset Class", "Investment Logic"], 
               "rows": [ {"Asset Class": "...", "Investment Logic": "..."} ] 
