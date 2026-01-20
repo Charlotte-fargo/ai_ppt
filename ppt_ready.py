@@ -101,12 +101,12 @@ class PPTGenerator:
         for eng, zh in term_dict.items():
             text = text.replace(eng, zh)
         
-        # 剩余部分尝试翻译（如果有英文）
-        if any(c.isalpha() for c in text):
-            try:
-                return GoogleTranslator(source='en', target='zh-CN').translate(text)
-            except:
-                return text
+        # # 剩余部分尝试翻译（如果有英文）
+        # if any(c.isalpha() for c in text):
+        #     try:
+        #         return GoogleTranslator(source='en', target='zh-CN').translate(text)
+        #     except:
+        #         return text
         return text
 
     def _get_standard_keys(self, title):
