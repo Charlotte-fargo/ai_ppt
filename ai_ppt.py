@@ -61,7 +61,7 @@ def save_temp_json(data, filename='articles.json'):
 def choose_template(location_name, language="cn"):
     """根据地点和语言选择模板"""
     # 获取地点对应的模板映射
-    location_templates = config.TEMPLATE_MAP.get(location_name, config.TEMPLATE_MAP["香港"])
+    location_templates = config.TEMPLATE_MAP.get(location_name, config.TEMPLATE_MAP["香港/Hong Kong"])
     
     # 根据语言选择模板
     template_path = location_templates.get(language, location_templates["cn"])
