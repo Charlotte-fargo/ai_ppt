@@ -441,9 +441,9 @@ class PPTGenerator:
                     for run in p.runs:
                         if self.language == "en":
 
-                            run.font.size = Pt(14)
-                        else:
                             run.font.size = Pt(12)
+                        else:
+                            run.font.size = Pt(14)
                 print(f"Slide {i+1} Body Text added")
 
             # 图片
