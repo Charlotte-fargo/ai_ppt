@@ -266,7 +266,7 @@ class PPTGenerator:
                     print(f"Adding source annotation in English: {source_text}")
                     p.runs[0].text = f"Source: {source_text}"
                 else:
-                    source_text = GoogleTranslator(source='auto', target='zh').translate(source_text)
+                    source_text = GoogleTranslator(source='auto', target='zh-CN').translate(source_text)
                     p.runs[0].text = f"资料来源：{source_text}"
                 
                 self._set_text_style(p.runs[0], font_name=cfg_s['font_name'], size=cfg_s['size'], color=config.COLOR_GRAY)
