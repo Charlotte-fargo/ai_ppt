@@ -97,14 +97,14 @@ class PPTGenerator:
             # 关键词 : 中文标准名
             "US Equities": "美股",
             "HK/China Equities": "中港股市",
-            "EU Equities": "欧股", 
+            "European Equities": "欧股", 
             "Japan Equities": "日股",
             "Fixed Income": "债券",
             "Gold": "黄金",
             "Crude Oil": "原油",
-            "Cash flow": "资金流",
-            "Bond Selection": "个债精选",   
-            "Stock Selection": "个股精选",
+            "Fund flow": "资金流",
+            "Top Pick - Bonds": "个债精选",   
+            "Top Pick - Stock": "个股精选",
             "债市": "债券"
         }
         
@@ -203,7 +203,6 @@ class PPTGenerator:
                 
                 if chart_title and chart_title != "NONE" and is_english_mode:
                     try:
-                        from deep_translator import GoogleTranslator
                         chart_title = GoogleTranslator(source='auto', target='en').translate(chart_title)
                     except Exception as e:
                         print(f"Translation failed: {e}")
@@ -262,9 +261,12 @@ class PPTGenerator:
                 p = textbox.text_frame.paragraphs[0]
                 if not p.runs: p.add_run()
                 if self.language == "en":
+                    source_text = GoogleTranslator(source='auto', target='en').translate(source_text)
+               
                     print(f"Adding source annotation in English: {source_text}")
                     p.runs[0].text = f"Source: {source_text}"
                 else:
+                    source_text = GoogleTranslator(source='auto', target='zh').translate(source_text)
                     p.runs[0].text = f"资料来源：{source_text}"
                 
                 self._set_text_style(p.runs[0], font_name=cfg_s['font_name'], size=cfg_s['size'], color=config.COLOR_GRAY)
@@ -364,7 +366,7 @@ class PPTGenerator:
                     
                     # 3. 计算样式逻辑
                     # 逻辑A: 投资逻辑字数多则变小
-                    f_size = 9 if len(text) > 200 and col_key == "投资逻辑" else 10
+                    f_size = 10
                     
                     # 逻辑B: 判断是否为第二列 (index=1)，如果是则加粗
                     is_second_column = (table_col_idx == 1)
@@ -433,11 +435,15 @@ class PPTGenerator:
                 body_ph.text = body_text
                 # 根据字数调整字体大小
                 total_chars = len(body_text)
-                font_size = Pt(14) if len(bullets) > 3 or total_chars > 200 else Pt(16)
+                font_size = Pt(14)
                 
                 for p in body_ph.text_frame.paragraphs:
                     for run in p.runs:
-                        run.font.size = font_size
+                        if self.language == "en":
+
+                            run.font.size = Pt(14)
+                        else:
+                            run.font.size = Pt(12)
                 print(f"Slide {i+1} Body Text added")
 
             # 图片
@@ -520,7 +526,7 @@ class PPTGenerator:
             self._fill_image(slide, img_path)
             
             # 仅资金流加注释
-            if topic == "资金流" or topic == "Cash Flow":
+            if topic == "资金流" or topic == "Fund Flow":
                 self._add_image_annotations(slide, img_path)
         
         self._remove_all_picture_placeholders(slide)
@@ -557,7 +563,7 @@ class PPTGenerator:
                 # --- 第二行：声明文字 ---
                 p2 = tf.add_paragraph()
                 if self.language == "en":
-                    p2.text = "Asset management services are provided by Gentlemen Capital, a subsidiary of the Group."
+                    p2.text = "Asset management services are provided by Gentlemen Capital Limited, a subsidiary of Fargo Wealth Group."
                 else:
                     p2.text = "资产管理服务由集团旗下公司绅士资本提供"
                 
@@ -648,9 +654,9 @@ class PPTGenerator:
             # 图片页 (根据 key 查找图片)
             if self.language == "en":
                 logging.info("添加英文版图片页")
-                self.create_image_slide("Stock Selection")
-                self.create_image_slide("Bond Selection")
-                self.create_image_slide("Cash Flow")
+                self.create_image_slide("Top Pick - Stock")
+                self.create_image_slide("Top Pick - Bonds")
+                self.create_image_slide("Fund Flow")
             else:
                 self.create_image_slide("个股精选")
                 self.create_image_slide("个债精选")
