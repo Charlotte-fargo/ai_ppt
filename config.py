@@ -121,15 +121,15 @@ OUTPUT_DIR = "ai_generate"
 
 # PPT 模板路径映射 (根据用户选择的地点，自动匹配模板文件)
 TEMPLATE_MAP = {
-    "香港": {
+    "香港/Hong Kong": {
         "cn": "template/AI PPT v2.pptx",  # 中文版
         "en": "template/AI PPT v4.pptx"  # 英文版
     },
-    "中国大陆": {
+    "中国大陆/China": {
         "cn": "template/AI PPT v3.pptx",  # 中文版
         "en": "template/AI PPT v5.pptx"  # 英文版
     },
-    "新加坡": {
+    "新加坡/Singapore": {
         "cn": "template/AI PPT v2.pptx",  # 中文版
         "en": "template/AI PPT v4.pptx"  # 英文版
     }
