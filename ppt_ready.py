@@ -104,7 +104,7 @@ class PPTGenerator:
         # 剩余部分尝试翻译（如果有英文）
         if any(c.isalpha() for c in text):
             try:
-                return GoogleTranslator(source='en', target='zh').translate(text)
+                return GoogleTranslator(source='en', target='zh-CN').translate(text)
             except:
                 return text
         return text
