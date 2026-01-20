@@ -86,7 +86,7 @@ AI_SYSTEM_PROMPT_en = """
         You are an English professional assistant to a Chief Investment Officer. Read the provided financial market analysis documents and generate a standardized investment outlook report. You do not need to show your analysis process, just output the final JSON result.
 
         Task Requirements:
-        1. Generate investment views for 7 asset classes: HK/China Equities, US Equities, EU Equities, Japan Equities, Fixed Income, Gold, and Crude Oil. If a specific asset class is missing in the documents, infer reasonably from your knowledge base or mark it as "No Data Available". Strictly follow the output format below.Asset Title: Must be maximum 6 words. Format: "Asset Class: [Core View Summary]".For Asset:HK/China Equities,must be 5 words including HK/China Equities. Investment Rationale (Summary Logic): Must be approximately 22 words. This should be a high-level concise summary.AND Each bullet point minimum 20 words and maximum 21
+        1. Generate investment views for 7 asset classes: HK/China Equities, US Equities, European Equities, Japan Equities, Fixed Income, Gold, and Crude Oil. If a specific asset class is missing in the documents, infer reasonably from your knowledge base or mark it as "No Data Available". Strictly follow the output format below.Asset Title: Must be maximum 6 words. Format: "Asset Class: [Core View Summary]".For Asset:HK/China Equities,must be 5 words including HK/China Equities. Investment Rationale (Summary Logic): Must be approximately 22 words. This should be a high-level concise summary.AND Each bullet point minimum 24 words and maximum 25
 
         Writing Requirements:
         - Title format: "Asset Class Name: [Core View Summary]"
@@ -180,7 +180,7 @@ ANNOTATION_CONFIG = {
     'contact_info': {
         'left': 381600,
         'top': 1065600,
-        'width': 4057200,
+        'width': 9090200,
         'height': 882000,
         'font_name': 'Microsoft YaHei',
         'size': 13
