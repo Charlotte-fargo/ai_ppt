@@ -89,6 +89,26 @@ class PPTGenerator:
                     sp.getparent().remove(sp)
                 except Exception:
                     pass
+
+    def translate_with_glossary(self,text):
+            term_dict = {
+            "Bloomberg": "彭博",
+            "Reuters": "路透",
+            "Goldman Sachs": "高盛",
+        }
+    
+        # 先替换已知术语
+        for eng, zh in term_dict.items():
+            text = text.replace(eng, zh)
+        
+        # 剩余部分尝试翻译（如果有英文）
+        if any(c.isalpha() for c in text):
+            try:
+                return GoogleTranslator(source='en', target='zh').translate(text)
+            except:
+                return text
+        return text
+
     def _get_standard_keys(self, title):
         """
         根据文章标题中的关键词，返回该资产类别的【中文标准名称】。
@@ -266,7 +286,7 @@ class PPTGenerator:
                     print(f"Adding source annotation in English: {source_text}")
                     p.runs[0].text = f"Source: {source_text}"
                 else:
-                    source_text = GoogleTranslator(source='auto', target='zh-CN').translate(source_text)
+                    source_text =self.translate_with_glossary(source_text)
                     p.runs[0].text = f"资料来源：{source_text}"
                 
                 self._set_text_style(p.runs[0], font_name=cfg_s['font_name'], size=cfg_s['size'], color=config.COLOR_GRAY)
