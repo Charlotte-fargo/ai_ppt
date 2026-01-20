@@ -180,7 +180,7 @@ ANNOTATION_CONFIG = {
     'contact_info': {
         'left': 381600,
         'top': 1065600,
-        'width': 6090200,
+        'width': 5090200,
         'height': 882000,
         'font_name': 'Microsoft YaHei',
         'size': 12
