@@ -91,7 +91,7 @@ class PPTGenerator:
                     pass
 
     def translate_with_glossary(self,text):
-            term_dict = {
+        term_dict = {
             "Bloomberg": "彭博",
             "Reuters": "路透",
             "Goldman Sachs": "高盛",
