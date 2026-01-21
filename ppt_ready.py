@@ -267,7 +267,6 @@ class PPTGenerator:
                 if len(source_text) > 11 and self.language == "en": offset_s = Pt(70)
                 elif len(source_text) > 13 and self.language != "cn": offset_s = Pt(40)
                 else: offset_s = Pt(20)
-                else: offset_s = Pt(20)
             else:
                 source_text = parts[0]
                 offset_s = -Pt(15)
