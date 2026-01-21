@@ -20,7 +20,7 @@ API_BASE_URL = "https://api-v2.easyview.xyz/v3/ai"
 CLIENT_ID = "cioinsight-api-client"
 CLIENT_SECRET = "b02fe9e7-36e6-4c81-a389-9399184eda9b"
 # AI 模型名称
-AI_MODEL_NAME = "claude-sonnet-4-5"
+AI_MODEL_NAME = "gemini-3-pro-preview"
 
 # 请求元数据 (Metadata)
 API_METADATA = {
