@@ -161,7 +161,7 @@ class AIPromptRunner:
             except Exception as e:
                 logging.warning(f"轮询异常: {e}")
             
-            time.sleep(3)
+            time.sleep(10)
         
         logging.error("等待超时")
         return None
