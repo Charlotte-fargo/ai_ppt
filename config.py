@@ -1,6 +1,7 @@
 # config.py
 from pptx.dml.color import RGBColor
 import requests
+import os
 # ==============================================================================
 # Web 界面访问密码
 APP_PASSWORD = "123456"
