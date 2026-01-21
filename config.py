@@ -107,7 +107,8 @@ AI_SYSTEM_PROMPT_en = """
               { "title": "...", "bullets": ["...", "..."] } 
           ]
         }
-        Note: Ensure the output JSON structure strictly adheres to the requirements, avoiding any formatting errors.
+        Note:Do not explain the thought process; provide the final conclusion directly. 
+        Ensure the output JSON structure strictly adheres to the requirements, avoiding any formatting errors.
         After generating each bullet point, check if the character count meets the requirements.
         Check that each title in content_slides starts with one of the asset class names, without any alterations.
         """
