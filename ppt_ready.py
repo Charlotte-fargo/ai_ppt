@@ -264,7 +264,7 @@ class PPTGenerator:
                 # 假设最后一部分是来源
                 raw_source = parts[-1].replace('，', ' ')
                 source_text = re.sub(r'\s+', ' ', raw_source).strip()
-                if len(source_text) > 11 and self.language == "en": offset_s = Pt(70)
+                if len(source_text) > 9 and self.language == "en": offset_s = Pt(90)
                 elif len(source_text) > 13 and self.language != "cn": offset_s = Pt(40)
                 else: offset_s = Pt(20)
             else:
