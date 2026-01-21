@@ -4,6 +4,7 @@ import json
 import requests
 import time
 import logging
+import re
 
 # --- 引入自定义模块 ---
 # 确保 construct_json, ai_prompt, ppt_ready 都在同一目录下
