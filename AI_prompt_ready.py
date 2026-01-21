@@ -103,7 +103,7 @@ class AIPromptRunner:
             "input": {
                 "parameter": {
                     "model_name": self.model_name,
-                    "prompt": self.prompt  # "请阅读附件..."
+                    "prompt": self.AI_system_prompt  # "请阅读附件..."
                 },
                 "resource": [
                     {
@@ -112,7 +112,7 @@ class AIPromptRunner:
                             "dataStatus": "NEW",
                             "mimeType": "text/plain",
                             "encoding": "BASE64",
-                            "data": encoded_text
+                            "data": self.context_text
                         }
                     }
                 ]
