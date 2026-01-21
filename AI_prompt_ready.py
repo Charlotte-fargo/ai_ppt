@@ -81,41 +81,25 @@ class AIPromptRunner:
 
     # ================= 2. 任务提交 =================
 
-    def _prepare_payload(self):
-        """构建 Inline Upload 的 Payload"""
+   def _prepare_payload(self):
+        """构建 LLM 调用 Payload（不使用附件）"""
         if not self.context_text:
             return None
 
         # 1. 拼接 System Prompt 和 Context
-        full_text = f"{self.AI_system_prompt}\n\n========== 原始文档内容 ==========\n{self.context_text}"
+        full_prompt = f"{self.AI_system_prompt}\n\n{self.context_text}"
         
-        # 2. Base64 编码
-        try:
-            encoded_text = base64.b64encode(full_text.encode('utf-8')).decode('utf-8')
-        except Exception as e:
-            logging.error(f"Base64 编码失败: {e}")
-            return None
-
-        # 3. 组装 Payload
+        
+        # 2. 组装 Payload
         payload = {
             "type": "callLlm",
             "metadata": self.metadata,
             "input": {
                 "parameter": {
                     "model_name": self.model_name,
-                    "prompt": self.AI_system_prompt  # "请阅读附件..."
-                },
-                "resource": [
-                    {
-                        "name": "context.txt",
-                        "resource": {
-                            "dataStatus": "NEW",
-                            "mimeType": "text/plain",
-                            "encoding": "BASE64",
-                            "data": self.context_text
-                        }
-                    }
-                ]
+                    "prompt": full_prompt  # 直接使用拼接后的完整 prompt
+                }
+                # 移除了 resource 部分，因为我们不需要附件
             },
             "callback": []
         }
