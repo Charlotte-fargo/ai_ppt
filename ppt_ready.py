@@ -123,8 +123,8 @@ class PPTGenerator:
             "Gold": "黄金",
             "Crude Oil": "原油",
             "Fund flow": "资金流",
-            "Top Pick - Bonds": "个债精选",   
-            "Top Pick - Stock": "个股精选",
+            "Top Picks - Bonds": "个债精选",   
+            "Top Picks - Equities": "个股精选",
             "债市": "债券"
         }
         
@@ -264,7 +264,9 @@ class PPTGenerator:
                 # 假设最后一部分是来源
                 raw_source = parts[-1].replace('，', ' ')
                 source_text = re.sub(r'\s+', ' ', raw_source).strip()
-                if len(source_text) > 13: offset_s = Pt(40)
+                if len(source_text) > 11 and self.language == "en": offset_s = Pt(70)
+                elif len(source_text) > 13 and self.language != "cn": offset_s = Pt(40)
+                else: offset_s = Pt(20)
                 else: offset_s = Pt(20)
             else:
                 source_text = parts[0]
@@ -674,8 +676,8 @@ class PPTGenerator:
             # 图片页 (根据 key 查找图片)
             if self.language == "en":
                 logging.info("添加英文版图片页")
-                self.create_image_slide("Top Pick - Stock")
-                self.create_image_slide("Top Pick - Bonds")
+                self.create_image_slide("Top Picks - Equities")
+                self.create_image_slide("Top Picks - Bonds")
                 self.create_image_slide("Fund Flow")
             else:
                 self.create_image_slide("个股精选")
