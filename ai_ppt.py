@@ -283,9 +283,9 @@ def main_app():
             print(f"Init AIPromptRunner with language={language_code}")
             articles_dir_cleaned = "cleaned_articles"
             os.makedirs(articles_dir_cleaned, exist_ok=True)
-            batch_process(INPUT_FOLDER=articles_dir, OUTPUT_FOLDER=articles_dir_cleaned)
+            batch_process(articles_dir, config.CLEANED_DIR)
             runner = AIPromptRunner(language=language_code)
-            final_json_data = runner.run(specific_folder=articles_dir_cleaned)
+            final_json_data = runner.run(specific_folder=config.CLEANED_DIR)
             
             if not final_json_data:
                 st.error("❌ AI 生成失败")
