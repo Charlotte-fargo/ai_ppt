@@ -81,7 +81,7 @@ class AIPromptRunner:
 
     # ================= 2. 任务提交 =================
 
-   def _prepare_payload(self):
+    def _prepare_payload(self):
         """构建 LLM 调用 Payload（不使用附件）"""
         if not self.context_text:
             return None
