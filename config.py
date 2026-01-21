@@ -118,7 +118,16 @@ AI_INSTRUCTION_PROMPT_en = "Please carefully read the attached file resources (r
 # 3. 文件路径与目录配置
 # ==============================================================================
 # 输出 PPT 目录
-OUTPUT_DIR = "ai_generate"
+BASE_DIR = "/tmp" 
+OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+TEMP_JSON = os.path.join(BASE_DIR, "articles.json")
+CLEANED_DIR = os.path.join(BASE_DIR, "cleaned_files")
+IMAGES_DIR = os.path.join(BASE_DIR, "images")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(CLEANED_DIR, exist_ok=True)
+os.makedirs(IMAGES_DIR, exist_ok=True)
+os.makedirs(BASE_DIR, exist_ok=True)
+
 
 # PPT 模板路径映射 (根据用户选择的地点，自动匹配模板文件)
 TEMPLATE_MAP = {
