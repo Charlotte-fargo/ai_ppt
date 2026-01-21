@@ -281,6 +281,7 @@ def main_app():
             language_code = get_language(language)
             print(f"Init AIPromptRunner with language={language_code}")
             articles_dir_cleaned = "cleaned_articles"
+            os.makedirs(articles_dir_cleaned, exist_ok=True)
             batch_process(INPUT_FOLDER=articles_dir, OUTPUT_FOLDER=articles_dir_cleaned)
             runner = AIPromptRunner(language=language_code)
             final_json_data = runner.run(specific_folder=articles_dir_cleaned)
