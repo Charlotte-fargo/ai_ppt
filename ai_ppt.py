@@ -78,7 +78,86 @@ def get_language(language):
     rel_language = config.LANGUAGE_MAP.get(language, config.LANGUAGE_MAP["中文/Chinese"])
     # Streamlit 中直接使用相对路径通常没问题
     return rel_language
+def clean_html_content(html_content):
+    """
+    清洗 HTML 文本：去除 img 标签和资料来源段落
+    """
+    if not isinstance(html_content, str):
+        return html_content
 
+    # 1. 匹配 < img ...> 标签 (包括跨行的属性)
+    # re.DOTALL 让 . 也能匹配换行符
+    img_pattern = re.compile(r'<img[^>]+>', re.IGNORECASE | re.DOTALL)
+    
+    # 2. 匹配包含 "资料来源" 的 <p> 段落
+    # 逻辑：匹配以 <p (或 <p >) 开始，中间内容包含 "资料来源"，直到 </p > 结束
+    # 这样可以连带删除包裹它的 <span ...> 等标签
+    source_pattern = re.compile(r'<p[^>]*>.*?资料来源.*?</p >', re.IGNORECASE | re.DOTALL)
+
+    # 执行替换
+    content = img_pattern.sub('', html_content)     # 删图片
+    content = source_pattern.sub('', content)       # 删资料来源
+    
+    return content
+def process_single_file(file_path, save_path):
+    """
+    读取单个文件，清洗数据，并保存
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        # 构建清洗后的字典结构，只保留需要的字段
+        cleaned_data = {
+            "titles": data.get("titles", {}),
+            "summaries": data.get("summaries", {}),
+            "contents": {} # 稍后填充
+        }
+
+        # 处理 contents
+        raw_contents = data.get("contents", {})
+        if raw_contents:
+            for lang, html_text in raw_contents.items():
+                cleaned_data["contents"][lang] = clean_html_content(html_text)
+
+        # 保存到输出文件夹
+        with open(save_path, 'w', encoding='utf-8') as f:
+            json.dump(cleaned_data, f, ensure_ascii=False, indent=2)
+            
+        print(f"[成功] 已清洗: {os.path.basename(file_path)}")
+
+    except json.JSONDecodeError:
+        print(f"[跳过] 文件格式错误 (非标准JSON): {os.path.basename(file_path)}")
+    except Exception as e:
+        print(f"[错误] 处理 {os.path.basename(file_path)} 时出错: {str(e)}")
+
+def batch_process(INPUT_FOLDER, OUTPUT_FOLDER):
+    # 1. 检查输入文件夹是否存在
+    if not os.path.exists(INPUT_FOLDER):
+        print(f"错误：找不到输入文件夹 '{INPUT_FOLDER}'，请先创建并放入 JSON 文件。")
+        return
+
+    # 2. 如果输出文件夹不存在，自动创建
+    if not os.path.exists(OUTPUT_FOLDER):
+        os.makedirs(OUTPUT_FOLDER)
+        print(f"已创建输出文件夹: {OUTPUT_FOLDER}")
+
+    # 3. 获取所有 JSON 文件
+    files = [f for f in os.listdir(INPUT_FOLDER) if f.lower().endswith('.json')]
+    
+    if not files:
+        print(f"在 '{INPUT_FOLDER}' 中没有找到 .json 文件。")
+        return
+
+    print(f"开始处理，共发现 {len(files)} 个文件...\n")
+
+    # 4. 循环处理
+    for filename in files:
+        input_path = os.path.join(INPUT_FOLDER, filename)
+        output_path = os.path.join(OUTPUT_FOLDER, filename)
+        process_single_file(input_path, output_path)
+
+    print(f"\n全部完成！清洗后的文件在 '{OUTPUT_FOLDER}' 文件夹中。")
 # ================= 2. 密码验证逻辑 =================
 
 def check_password():
@@ -201,9 +280,10 @@ def main_app():
             
             language_code = get_language(language)
             print(f"Init AIPromptRunner with language={language_code}")
-            
+            articles_dir_cleaned = "cleaned_articles"
+            batch_process(INPUT_FOLDER=articles_dir, OUTPUT_FOLDER=articles_dir_cleaned)
             runner = AIPromptRunner(language=language_code)
-            final_json_data = runner.run(specific_folder=articles_dir)
+            final_json_data = runner.run(specific_folder=articles_dir_cleaned)
             
             if not final_json_data:
                 st.error("❌ AI 生成失败")
