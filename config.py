@@ -2,9 +2,10 @@
 from pptx.dml.color import RGBColor
 import requests
 import os
+import streamlit as st
 # ==============================================================================
 # Web 界面访问密码
-APP_PASSWORD = "123456"
+# APP_PASSWORD = "123456"
 # 0. News Platform 配置 (用于抓取文章)
 # ==============================================================================
 NEWS_AUTH_URL = "https://auth.easyview.xyz/realms/Easyview-News-Platform-Realm/protocol/openid-connect/token"
