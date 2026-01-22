@@ -12,7 +12,7 @@ NEWS_AUTH_URL = "https://auth.easyview.xyz/realms/Easyview-News-Platform-Realm/p
 NEWS_ARTICLE_URL = "https://news-platform.easyview.xyz/api/v1/channel/cio/articles"
 NEWS_CLIENT_ID = "cio-backend"
 # NEWS_CLIENT_SECRET = "4cbb1527-bcc4-42ae-a7ec-691359f3e119"
-NEWS_CLIENT_SECRET = st.secrets[" NEWS_CLIENT_SECRET"]
+NEWS_CLIENT_SECRET = st.secrets["NEWS_CLIENT_SECRET"]
 # 1. AI API 与 认证配置
 # ==============================================================================
 
