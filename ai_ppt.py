@@ -207,7 +207,7 @@ def main_app():
         # 使用 markdown 的 # 号，并去除默认的 margin (空白)，让它和 Logo 贴得更紧
         st.markdown(
             """
-            <h1 style='margin-bottom: 0px; margin-top: 0px;'>EasyView 自动化报告系统</h1>
+            <h1 style='margin-bottom: 0px; margin-top: 0px;'>CIO ffice 自动化报告系统</h1>
             <p style='font-size: 16px; color: gray; margin-top: -5px;'>Automated Investment Report Generator</p>
             """, 
             unsafe_allow_html=True
