@@ -10,15 +10,19 @@ APP_PASSWORD = "123456"
 NEWS_AUTH_URL = "https://auth.easyview.xyz/realms/Easyview-News-Platform-Realm/protocol/openid-connect/token"
 NEWS_ARTICLE_URL = "https://news-platform.easyview.xyz/api/v1/channel/cio/articles"
 NEWS_CLIENT_ID = "cio-backend"
-NEWS_CLIENT_SECRET = "4cbb1527-bcc4-42ae-a7ec-691359f3e119"
+# NEWS_CLIENT_SECRET = "4cbb1527-bcc4-42ae-a7ec-691359f3e119"
+NEWS_CLIENT_SECRET = st.secrets[" NEWS_CLIENT_SECRET"]
 # 1. AI API 与 认证配置
 # ==============================================================================
 
 AUTH_URL = "https://auth-v2.easyview.xyz/realms/evhk/protocol/openid-connect/token"
 API_BASE_URL = "https://api-v2.easyview.xyz/v3/ai"
 # AI 服务的专用凭据
-CLIENT_ID = "cioinsight-api-client"
-CLIENT_SECRET = "b02fe9e7-36e6-4c81-a389-9399184eda9b"
+# CLIENT_ID = "cioinsight-api-client"
+# CLIENT_SECRET = "b02fe9e7-36e6-4c81-a389-9399184eda9b"
+CLIENT_ID = st.secrets["CLIENT_ID"]
+CLIENT_SECRET = st.secrets["CLIENT_SECRET"]
+APP_PASSWORD = st.secrets["APP_PASSWORD"]
 # AI 模型名称
 AI_MODEL_NAME = "gemini-3-pro-preview"
 
