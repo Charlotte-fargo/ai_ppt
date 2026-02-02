@@ -46,7 +46,14 @@ class PPTGenerator:
         run.font.size = Pt(size)
         run.font.bold = bold
         run.font.color.rgb = color
-
+        font = run.font
+        font.name = font_name
+        font.size = Pt(size) if isinstance(size, (int, float)) else size
+        font.bold = bold  # 关键！确保加粗被设置为 True
+        if hasattr(run, 'text_frame'):
+            for paragraph in run.text_frame.paragraphs:
+                for run_in_para in paragraph.runs:
+                    run_in_para.font.bold = bold
     def _get_image_dimensions(self, image_path):
         """获取图片尺寸"""
         try:
