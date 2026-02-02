@@ -40,20 +40,39 @@ class PPTGenerator:
 
     # --- 通用工具方法 ---
 
-    def _set_text_style(self, run, font_name='华文细黑', size=12, bold=False, color=config.COLOR_BLACK):
-        """统一设置文本样式"""
-        run.font.name = font_name
-        run.font.size = Pt(size)
-        run.font.bold = bold
-        run.font.color.rgb = color
+   def _set_text_style(self, run, font_name='华文细黑', size=12, bold=False, color=config.COLOR_BLACK):
+    """统一设置文本样式（修复版）"""
+    try:
+        # 确保 run 对象有效
+        if not run:
+            print("警告: run 对象为空")
+            return
+        
+        # 只设置一次！避免覆盖
         font = run.font
+        
+        # 设置字体名称
         font.name = font_name
-        font.size = Pt(size) if isinstance(size, (int, float)) else size
-        font.bold = bold  # 关键！确保加粗被设置为 True
-        if hasattr(run, 'text_frame'):
-            for paragraph in run.text_frame.paragraphs:
-                for run_in_para in paragraph.runs:
-                    run_in_para.font.bold = bold
+        
+        # 设置字体大小（确保是 Pt 对象）
+        if not isinstance(size, Pt):
+            size = Pt(size)
+        font.size = size
+        
+        # 设置加粗（确保是布尔值）
+        font.bold = bool(bold)
+        
+        # 设置颜色
+        font.color.rgb = color
+        
+        # 调试输出
+        print(f"DEBUG: 设置了字体 - 名称: {font.name}, 大小: {font.size}, 加粗: {font.bold}")
+        
+    except Exception as e:
+        print(f"设置文本样式失败: {e}")
+        import traceback
+        traceback.print_exc()
+        
     def _get_image_dimensions(self, image_path):
         """获取图片尺寸"""
         try:
@@ -252,7 +271,7 @@ class PPTGenerator:
                         if len(chart_title) > 20: offset = Pt(100)
                         elif len(chart_title) > 10: offset = Pt(50)
                     
-                    
+                   
                     t_left = cfg['left_base'] - offset
                     
                     textbox = slide.shapes.add_textbox(t_left, cfg['top'], cfg['width'], cfg['height'])
@@ -261,8 +280,8 @@ class PPTGenerator:
                     
                     # 3. 设置字体样式：如果是英文，强制使用 Arial Narrow
                     # 注意："Arial Narrow" 是字体名，bold=True 是加粗
-                    # font_to_use = "Arial Narrow" if is_english_mode else cfg['font_name']
-                    
+                    font_to_use = cfg['font_name']
+                    print(f"正在设置字体样式: 字体={font_to_use}, 大小={cfg['size']}, 加粗=True")
                     self._set_text_style(run, font_name=font_to_use, size=cfg['size'], bold=True)
 
             # B. 添加资料来源
