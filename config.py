@@ -177,13 +177,21 @@ LAYOUT_IDX = {
 # 图片注释坐标 (单位: EMU)
 # 用于在图片周围添加"标题"和"资料来源"
 ANNOTATION_CONFIG = {
-    'title': {
+    'title_cn': {
         'top': 3016459,
         'left_base': 3750684,
         'width': 1616075,
         'height': 226581,
         'font_name': '华文细黑',
         'size': 12
+    },
+    'title_en': {
+        'top': 3016459,
+        'left_base': 3750684,
+        'width': 1616075,
+        'height': 226581,
+        'font_name': '华文细黑',
+        'size': 14
     },
     'source': {
         'top': 6316663,
