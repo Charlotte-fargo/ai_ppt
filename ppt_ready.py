@@ -252,7 +252,7 @@ class PPTGenerator:
                     
                     # 3. 设置字体样式：如果是英文，强制使用 Arial Narrow
                     # 注意："Arial Narrow" 是字体名，bold=True 是加粗
-                    font_to_use = "Arial Narrow" if is_english_mode else cfg['font_name']
+                    # font_to_use = "Arial Narrow" if is_english_mode else cfg['font_name']
                     
                     self._set_text_style(run, font_name=font_to_use, size=cfg['size'], bold=True)
 
