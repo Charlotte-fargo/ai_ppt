@@ -183,7 +183,7 @@ ANNOTATION_CONFIG = {
         'width': 1616075,
         'height': 226581,
         'font_name': '华文细黑',
-        'size': 11
+        'size': 12
     },
     'source': {
         'top': 6316663,
