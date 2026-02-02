@@ -41,37 +41,37 @@ class PPTGenerator:
     # --- 通用工具方法 ---
 
    def _set_text_style(self, run, font_name='华文细黑', size=12, bold=False, color=config.COLOR_BLACK):
-    """统一设置文本样式（修复版）"""
-    try:
-        # 确保 run 对象有效
-        if not run:
-            print("警告: run 对象为空")
-            return
-        
-        # 只设置一次！避免覆盖
-        font = run.font
-        
-        # 设置字体名称
-        font.name = font_name
-        
-        # 设置字体大小（确保是 Pt 对象）
-        if not isinstance(size, Pt):
-            size = Pt(size)
-        font.size = size
-        
-        # 设置加粗（确保是布尔值）
-        font.bold = bool(bold)
-        
-        # 设置颜色
-        font.color.rgb = color
-        
-        # 调试输出
-        print(f"DEBUG: 设置了字体 - 名称: {font.name}, 大小: {font.size}, 加粗: {font.bold}")
-        
-    except Exception as e:
-        print(f"设置文本样式失败: {e}")
-        import traceback
-        traceback.print_exc()
+        """统一设置文本样式（修复版）"""
+        try:
+            # 确保 run 对象有效
+            if not run:
+                print("警告: run 对象为空")
+                return
+            
+            # 只设置一次！避免覆盖
+            font = run.font
+            
+            # 设置字体名称
+            font.name = font_name
+            
+            # 设置字体大小（确保是 Pt 对象）
+            if not isinstance(size, Pt):
+                size = Pt(size)
+            font.size = size
+            
+            # 设置加粗（确保是布尔值）
+            font.bold = bool(bold)
+            
+            # 设置颜色
+            font.color.rgb = color
+            
+            # 调试输出
+            print(f"DEBUG: 设置了字体 - 名称: {font.name}, 大小: {font.size}, 加粗: {font.bold}")
+            
+        except Exception as e:
+            print(f"设置文本样式失败: {e}")
+            import traceback
+            traceback.print_exc()
         
     def _get_image_dimensions(self, image_path):
         """获取图片尺寸"""
