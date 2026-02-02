@@ -236,15 +236,15 @@ class PPTGenerator:
                         cfg = config.ANNOTATION_CONFIG['title_en']
                         cfg['size'] = Pt(12)
                         # 英文判断逻辑 (字符数较多，但 Arial Narrow 比较省空间)
-                        if len(chart_title) > 75: offset = Pt(140)
-                        elif len(chart_title) > 40: offset = Pt(60)
-                        elif len(chart_title) > 54: offset = Pt(70)
+                        if len(chart_title) > 75: offset = Pt(160)
+                        elif len(chart_title) > 40: offset = Pt(80)
+                        elif len(chart_title) > 54: offset = Pt(80)
                     else:
                         cfg = config.ANNOTATION_CONFIG['title_cn']
                         cfg['size'] = Pt(14)
                         # 中文判断逻辑
-                        if len(chart_title) > 20: offset = Pt(80)
-                        elif len(chart_title) > 10: offset = Pt(30)
+                        if len(chart_title) > 20: offset = Pt(100)
+                        elif len(chart_title) > 10: offset = Pt(50)
                     
                     
                     t_left = cfg['left_base'] - offset
