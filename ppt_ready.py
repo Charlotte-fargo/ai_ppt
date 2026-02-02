@@ -228,17 +228,18 @@ class PPTGenerator:
                         print(f"Translation failed: {e}")
 
                 if chart_title and chart_title != "NONE":
-                    cfg = config.ANNOTATION_CONFIG['title']
                     
                     # 2. 动态调整左边距 (英文和中文长度判断标准不同)
                     offset = Pt(0)
                     print(f"length of chart title '{chart_title}': {len(chart_title)}")
                     if is_english_mode:
+                        cfg = config.ANNOTATION_CONFIG['title_en']
                         # 英文判断逻辑 (字符数较多，但 Arial Narrow 比较省空间)
                         if len(chart_title) > 75: offset = Pt(140)
                         elif len(chart_title) > 40: offset = Pt(60)
                         elif len(chart_title) > 54: offset = Pt(70)
                     else:
+                        cfg = config.ANNOTATION_CONFIG['title_cn']
                         # 中文判断逻辑
                         if len(chart_title) > 20: offset = Pt(80)
                         elif len(chart_title) > 10: offset = Pt(30)
