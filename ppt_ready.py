@@ -40,7 +40,7 @@ class PPTGenerator:
 
     # --- 通用工具方法 ---
 
-   def _set_text_style(self, run, font_name='华文细黑', size=12, bold=False, color=config.COLOR_BLACK):
+    def _set_text_style(self, run, font_name='华文细黑', size=12, bold=False, color=config.COLOR_BLACK):
         """统一设置文本样式（修复版）"""
         try:
             # 确保 run 对象有效
