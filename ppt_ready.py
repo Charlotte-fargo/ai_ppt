@@ -269,7 +269,7 @@ class PPTGenerator:
                    
                         # 中文判断逻辑
                         if len(chart_title) > 20: offset = Pt(110)
-                        elif len(chart_title) > 10: offset = Pt(50)
+                        elif len(chart_title) > 10: offset = Pt(40)
                     
                    
                     t_left = cfg['left_base'] - offset
