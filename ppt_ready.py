@@ -268,7 +268,7 @@ class PPTGenerator:
                         cfg = config.ANNOTATION_CONFIG['title_cn']
                    
                         # 中文判断逻辑
-                        if len(chart_title) > 20: offset = Pt(120)
+                        if len(chart_title) > 20: offset = Pt(110)
                         elif len(chart_title) > 10: offset = Pt(50)
                     
                    
