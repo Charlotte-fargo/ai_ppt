@@ -3,6 +3,7 @@ from pptx.dml.color import RGBColor
 import requests
 import os
 import streamlit as st
+from pptx.util import Pt
 # ==============================================================================
 # Web 界面访问密码
 # APP_PASSWORD = "123456"
@@ -183,7 +184,7 @@ ANNOTATION_CONFIG = {
         'width': 1616075,
         'height': 226581,
         'font_name': '华文细黑',
-        'size': 14
+        'size': Pt(14)
     },
     'title_en': {
         'top': 3016459,
@@ -191,7 +192,7 @@ ANNOTATION_CONFIG = {
         'width': 1616075,
         'height': 226581,
         'font_name': '华文细黑',
-        'size': 12
+        'size': Pt(12)
     },
     'source': {
         'top': 6316663,
