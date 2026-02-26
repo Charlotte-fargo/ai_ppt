@@ -17,6 +17,7 @@ class AIPromptRunner:
         self.api_base = config.API_BASE_URL
         # self.token = config.API_TOKEN
         # self.input_dir = config.INPUT_BASE_DIR
+        self.token = None  # 初始化为 None，稍后在 run() 中获取
         self.AUTH_URL = config.AUTH_URL
         self.CLIENT_ID = config.CLIENT_ID
         self.CLIENT_SECRET = config.CLIENT_SECRET
@@ -139,13 +140,16 @@ class AIPromptRunner:
     def poll_job(self, job_id, max_retries=60):
         """轮询任务状态"""
         url = f"{self.api_base}/job/JOB_ID/{job_id}"
-        headers = {'Authorization': f'Bearer {self.token}'}
         
         logging.info(f"开始轮询结果: {url}")
         
         for i in range(max_retries):
+            # 【重要修改】：将 headers 移入循环内部，确保每次使用最新的 self.token
+            headers = {'Authorization': f'Bearer {self.token}'}
+            
             try:
                 resp = requests.get(url, headers=headers)
+                
                 if resp.status_code == 200:
                     data = resp.json()
                     status = data.get("status")
@@ -156,15 +160,32 @@ class AIPromptRunner:
                     if status in ["FAILED", "ERROR"]:
                         logging.error(f"任务失败: {data}")
                         return None
+                        
+                elif resp.status_code == 401:
+                    # 【核心修复】：捕获到 401 报错，立即刷新 Token
+                    logging.warning(f"[第 {i+1} 次] Token 已过期 (401)，正在尝试重新获取 Token...")
+                    new_token = self.get_access_token_b()
+                    
+                    if new_token:
+                        self.token = new_token  # 更新实例的 Token
+                        logging.info("Token 刷新成功！立即使用新 Token 继续查询...")
+                        continue  # 刷新成功后，不休眠，立即进入下一次循环尝试获取状态
+                    else:
+                        logging.error("Token 刷新失败，终止轮询。")
+                        return None
+                        
                 else:
-                    logging.warning(f"查询报错: {resp.status_code}")
+                    logging.warning(f"查询报错: HTTP {resp.status_code}")
+                    
             except Exception as e:
                 logging.warning(f"轮询异常: {e}")
             
+            # 如果状态是 200 且仍在 PENDING 等待中，或者遇到了网络抖动异常，则休眠 10 秒
             time.sleep(10)
         
         logging.error("等待超时")
         return None
+
 
     def _extract_json_content(self, api_response):
         """从 API 响应中提取并清洗 JSON"""
@@ -240,8 +261,11 @@ class AIPromptRunner:
         if not self.load_files(specific_folder):
             logging.error("文件加载失败，流程终止")
             return None
-        token = self.get_access_token_b()
-        self.token = token
+        logging.info("正在获取初始 Token...")
+        self.token = self.get_access_token_b()
+        if not self.token:
+            logging.error("无法获取初始 Token，流程终止")
+            return None
         # 2. 提交任务
         job_id = self.submit_job()
         if not job_id:
