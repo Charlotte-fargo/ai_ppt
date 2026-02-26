@@ -79,27 +79,48 @@ def get_language(language):
     rel_language = config.LANGUAGE_MAP.get(language, config.LANGUAGE_MAP["中文/Chinese"])
     # Streamlit 中直接使用相对路径通常没问题
     return rel_language
+import re
+
 def clean_html_content(html_content):
     """
-    清洗 HTML 文本：去除 img 标签和资料来源段落
+    清洗 HTML 文本：去除 img、VML图表乱码（Base64）和资料来源段落
     """
     if not isinstance(html_content, str):
         return html_content
 
-    # 1. 匹配 < img ...> 标签 (包括跨行的属性)
-    # re.DOTALL 让 . 也能匹配换行符
+    # === 1. 强力清除包含巨长 Base64 编码的 VML 标签（解决你的乱码核心问题！） ===
+    # 匹配类似 <v:rect ... o:gfxdata="UEsDB..."> 的标签
+    vml_pattern = re.compile(r'<v:[^>]*o:gfxdata=[^>]*>', re.IGNORECASE | re.DOTALL)
+    
+    # 匹配成对的 <v:...> ... </v:...> 隐藏图表标签
+    vml_pair_pattern = re.compile(r'<v:[^>]*>.*?</v:[^>]*>', re.IGNORECASE | re.DOTALL)
+
+    # 匹配可能裸露在外的超长 Base64 字符串（连续超过500个字符的乱码）
+    base64_pattern = re.compile(r'[A-Za-z0-9+/=]{500,}')
+
+    # === 2. 你原有的清洗规则 ===
+    # 匹配 < img ...> 标签 
     img_pattern = re.compile(r'<img[^>]+>', re.IGNORECASE | re.DOTALL)
     
-    # 2. 匹配包含 "资料来源" 的 <p> 段落
-    # 逻辑：匹配以 <p (或 <p >) 开始，中间内容包含 "资料来源"，直到 </p > 结束
-    # 这样可以连带删除包裹它的 <span ...> 等标签
-    source_pattern = re.compile(r'<p[^>]*>.*?资料来源.*?</p >', re.IGNORECASE | re.DOTALL)
+    # 匹配包含 "资料来源" 的 <p> 段落
+    source_pattern = re.compile(r'<p[^>]*>.*?资料来源.*?</p\s*>', re.IGNORECASE | re.DOTALL)
 
-    # 执行替换
-    content = img_pattern.sub('', html_content)     # 删图片
-    content = source_pattern.sub('', content)       # 删资料来源
+    # === 3. 执行替换 ===
+    content = vml_pattern.sub('', html_content)         # 删带有 gfxdata 的乱码标签
+    content = vml_pair_pattern.sub('', content)         # 删 VML 图表对
+    content = base64_pattern.sub('', content)           # 删裸露的超长乱码
+    content = img_pattern.sub('', content)              # 删普通图片
+    content = source_pattern.sub('', content)           # 删资料来源
     
-    return content
+    # 选做：如果你希望传给 AI 的内容更干净，甚至可以把剩下的所有普通 HTML 标签也顺手干掉
+    # content = re.sub(r'<.*?>', '', content)
+
+    # 4. 清理多余的空白符和换行
+    content = re.sub(r'\n\s*\n', '\n\n', content)
+    content = content.replace('&nbsp;', ' ')
+
+    return content.strip()
+
 def process_single_file(file_path, save_path):
     """
     读取单个文件，清洗数据，并保存
